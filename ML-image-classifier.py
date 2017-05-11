@@ -39,6 +39,13 @@ if __name__ == '__main__':
     img_size = (32, 32)
     img = Image.new(img_mode, img_size)
 
-    for i in range(100):
+    for i in range(1000):
         print("number = %4d, name = %s" % (i, filenames[i]))
-        # showimage(data[i])
+        showimage(data[i])
+
+
+
+
+
+
+
