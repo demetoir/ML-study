@@ -42,10 +42,3 @@ if __name__ == '__main__':
     for i in range(1000):
         print("number = %4d, name = %s" % (i, filenames[i]))
         showimage(data[i])
-
-
-
-
-
-
-
