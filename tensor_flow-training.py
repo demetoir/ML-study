@@ -2,8 +2,8 @@ import tensorflow as tf
 import random
 import numpy as np
 
-get1DList = lambda shape: [random.randint(1, 10) for i in range(shape[0])]
-get2DList = lambda shape: [[random.randint(1, 10) for i in range(shape[1])] for j in range(shape[0])]
+get1DList = lambda shape: [random.randint(1, 10) for _ in range(shape[0])]
+get2DList = lambda shape: [[random.randint(1, 10) for _ in range(shape[1])] for _i in range(shape[0])]
 printVal = lambda val: print(val.__str__(), "=", val)
 
 
@@ -142,7 +142,7 @@ def ex_session():
 
 
 # not done yet
-def ex_tensorboard():
+def ex_tensor_board():
     # http: // pythonkim.tistory.com / 38
     # https: // www.youtube.com / watch?v = lmrWZPFYjHM
     summary = tf.merge_all_summaries()
@@ -196,7 +196,7 @@ def training_MNIST():
     return
 
 
-def traning_simple_neural_onebyone():
+def training_simple_neural_one_by_one():
     # logical and operation
     data_X1 = [0., 1., 0., 1.]
     data_X2 = [0., 0., 1., 1.]
@@ -239,7 +239,7 @@ def traning_simple_neural_onebyone():
     return
 
 
-def training_simple_neural_tensorflowtic():
+def training_simple_neural_tensor_flow_tic():
     tf.set_random_seed(777)
     # logical and operation
     data_X = [
@@ -291,8 +291,7 @@ def training_simple_neural_tensorflowtic():
     return
 
 
-# not yet
-def training_simple_nearual_network():
+def training_simple_neural_network():
     # xor opearation
     x_data = [
         [0, 0],
@@ -451,12 +450,15 @@ if __name__ == '__main__':
     # ex_session()
     # ex_misc()
 
+
     # traning_simple_neural_onebyone()
-
     # training_simple_neural_tensorflowtic()
-
     # training_softmax_regression()
+    training_simple_neural_network()
 
-    training_simple_nearual_network()
+    # 정리하기
+    # https: // www.youtube.com / watch?v = 6CCXyfvubvY
+    # https: // www.slideshare.net / dahlmoon / 20160623 - 63318427
+
 
     pass
