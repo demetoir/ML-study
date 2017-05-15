@@ -1,10 +1,16 @@
 import tensorflow as tf
 import random
 import numpy as np
+import os
+import time
 
 get1DList = lambda shape: [random.randint(1, 10) for _ in range(shape[0])]
 get2DList = lambda shape: [[random.randint(1, 10) for _ in range(shape[1])] for _i in range(shape[0])]
 printVal = lambda val: print(val.__str__(), "=", val)
+
+
+# FLAGS = tf.app.flags.FLAGS
+# FLAGS.log
 
 
 # if shape = [3,4] returns [[2, 3, 3, 3], [7, 3, 4, 10], [8, 5, 8, 3]]
@@ -141,16 +147,209 @@ def ex_session():
             print(a)
 
 
-# not done yet
+# TODO more experiment for better way to user tensorboard
+# TODO write tensorboard auto update script
+# training_simple_neural_network verion
 def ex_tensor_board():
-    # http: // pythonkim.tistory.com / 38
-    # https: // www.youtube.com / watch?v = lmrWZPFYjHM
-    summary = tf.merge_all_summaries()
+    startTime = time.time()
+
+    # xor opearation
+    x_data = [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1]
+    ]
+    y_data = [
+        [0],
+        [1],
+        [1],
+        [0]
+    ]
+
+    # experiment result
+    # all cpu no sum: 101
+    # cal gpu sum cpu with cal: 42
+    # cal gpu no sum: 34
+    # cal gpu sum cpu, assign : i can't
+    # cal gpu sum cpu, direct from gpu tensor : 45
+
+    # NN modeling build
+    with tf.device("/gpu:0"):
+        # input layer
+        X = tf.placeholder(tf.float32, [None, 2], name="X")
+        y = tf.placeholder(tf.float32, [None, 1], name="Y")
+
+        # layer 1
+        layer1len = 1000
+        W1 = tf.Variable(tf.random_normal([2, layer1len]), name="W1")
+        B1 = tf.Variable(tf.random_normal([layer1len]), name="B1")
+        layer1 = tf.sigmoid(tf.matmul(X, W1) + B1, name="layer1")
+
+        # layer 2
+        layer2len = 1000
+        W2 = tf.Variable(tf.random_normal([layer1len, layer2len]), name="W2")
+        B2 = tf.Variable(tf.random_normal([layer2len]), name="B2")
+        layer2 = tf.sigmoid(tf.matmul(layer1, W2) + B2, name="layer2")
+
+        # layer 3
+        layer3len = 1000
+        W3 = tf.Variable(tf.random_normal([layer2len, layer3len]), name="W3")
+        B3 = tf.Variable(tf.random_normal([layer3len]), name="B3")
+        layer3 = tf.sigmoid(tf.matmul(layer2, W3) + B3, name="layer3")
+
+        # output layer
+        outputLayerLen = 1
+        W4 = tf.Variable(tf.random_normal([layer3len, outputLayerLen]), name="W4")
+        B4 = tf.Variable(tf.random_normal([outputLayerLen]), name="B4")
+        h = tf.sigmoid(tf.matmul(layer3, W4) + B4, name="h")
+
+        cost = -tf.reduce_mean(y * tf.log(h) + (1 - y) * tf.log(1 - h), name="cost")
+        output = tf.cast(h > 0.5, tf.float32, name="output")
+        acc = tf.reduce_mean(tf.cast(tf.equal(y, output), dtype=tf.float32), name="acc")
+
+        # train operation
+        learning_rate = 0.01
+        train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+
+    # tensorboard summary build
+    with tf.device("/cpu:0"):
+        # calculate 방식
+        # s_cost = -tf.reduce_mean(y * tf.log(h) + (1 - y) * tf.log(1 - h), name="s_cost")
+        # s_output = tf.cast(h > 0.5, tf.float32, name="s_output")
+        # s_acc = tf.reduce_mean(tf.cast(tf.equal(y, s_output), dtype=tf.float32), name="s_acc")
+        # tf.scalar_summary("summary_cost", s_cost)
+        # tf.scalar_summary("summary_acc", s_acc)
+
+
+        # assign 방식, 안됨
+        # s_cost = tf.assign(cost, cost)
+        # s_acc = tf.assign(acc, acc)
+
+        # direct from gpu 방식
+        tf.scalar_summary("summary_cost", cost)
+        tf.scalar_summary("summary_acc", acc)
+
+    init_op = tf.initialize_all_variables()
+    data = {X: x_data, y: y_data}
+    with tf.Session() as sess:
+        sess.run(init_op)
+
+        # build summarywriter and summary merged operation
+        dir = os.path.join(os.path.curdir, "tensorboard")
+        # print("dir:", os.path.abspath(dir))
+        writer = tf.train.SummaryWriter(dir, sess.graph)
+        merged = tf.merge_all_summaries()
+
+        for step in range(100001):
+            sess.run(train_op, feed_dict=data)
+
+            if step % 100 == 0:
+                pass
+
+            # run merged opation
+            summary = sess.run(merged, feed_dict=data)
+            # write summary with step
+            writer.add_summary(summary, step)
+
+        print(sess.run(acc, data))
+        print(sess.run(cost, data))
+        print(sess.run(output, data))
+        print(sess.run(y, data))
+
+    print(time.time() - startTime)
     #
+    # # http: // pythonkim.tistory.com / 38
+    # # https: // www.youtube.com / watch?v = lmrWZPFYjHM
+    #
+    # # and operation
+    # data_X = [
+    #     [0., 0.],
+    #     [1., 0.],
+    #     [0., 1.],
+    #     [1., 1.]
+    # ]
+    # data_y = [
+    #     [0.],
+    #     [1.],
+    #     [1.],
+    #     [1.]
+    # ]
+    #
+    #
+    # calculateDevice = "/gpu:0"
+    # summaryDevice = "/cpu:0"
+    # # 17.22634220123291
+    #
+    # with tf.name_scope("input"):
+    #     with tf.device(calculateDevice):
+    #         X = tf.placeholder(tf.float32, [None, 2], name="X")
+    #         Y = tf.placeholder(tf.float32, [None, 1], name="Y")
+    #
+    # with tf.name_scope("perceptron"):
+    #     with tf.device(calculateDevice):
+    #         tf.set_random_seed(10007)
+    #         W = tf.Variable(tf.random_normal([2, 1]), name='weight')
+    #         bias = tf.Variable(tf.random_normal([1]), name='bias')
+    #         h = tf.sigmoid(tf.matmul(X, W) + bias, name="h")
+    #
+    # with tf.name_scope("cost"):
+    #     with tf.device(calculateDevice):
+    #         cost = -tf.reduce_mean(Y * tf.log(h) + (1 - Y) * tf.log(1 - h), name="cost")
+    #         learning_rate = 0.1
+    #         train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+    #
+    # with tf.name_scope("output"):
+    #     with tf.device(calculateDevice):
+    #         output = tf.cast(h > 0.5, tf.float32, name="output")
+    #         acc = tf.reduce_mean(tf.cast(tf.equal(output, Y), tf.float32), name="acc")
+    #
+    # with tf.name_scope("summary"):
+    #     with tf.device(summaryDevice):
+    #         summary_cost = -tf.reduce_mean(Y * tf.log(h) + (1 - Y) * tf.log(1 - h), name="summary_cost")
+    #         tf.scalar_summary("summary_cost", summary_cost)
+    #         summary_output = tf.cast(h > 0.5, tf.float32, name="summary_output")
+    #         summary_acc = tf.reduce_mean(tf.cast(tf.equal(summary_output, Y), tf.float32), name="summary_acc")
+    #         tf.scalar_summary("summary_acc", summary_acc)
+    #
+    #         # summary_cost = tf.Variable(cost, name="summary_cost")
+    #         # tf.scalar_summary("summary_cost", summary_cost)
+    #         # summary_acc = tf.Variable(acc, name="summary_acc")
+    #         # tf.scalar_summary("summary_acc", summary_acc)
+    #
+    # init_op = tf.global_variables_initializer()
     # with tf.Session() as sess:
-    #     with tf.device("/gpu:0"):
-    #         summary_writer = tf.train.SummaryWriter(FlAGS.train_dir, sess.graph)
+    #     sess.run(init_op)
+    #
+    #     dir = os.path.join(os.path.curdir, "tensorboard")
+    #     print("dir:", os.path.abspath(dir))
+    #     writer = tf.train.SummaryWriter(dir, sess.graph)
+    #     merged = tf.merge_all_summaries()
+    #
+    #
+    #     data = {X: data_X, Y: data_y}
+    #     for step in range(1, 10001):
+    #         sess.run(train_op, feed_dict=data)
+    #
+    #         if step % 100 == 0:
+    #             # print(step, sess.run(acc, feed_dict=data))
+    #             # print()
+    #             pass
+    #
+    #         summary = sess.run(merged, feed_dict=data)
+    #         writer.add_summary(summary, step)
+    #
+    #     print(sess.run(acc, feed_dict=data))
+    #     print(sess.run(cost, feed_dict=data))
+    #     print(sess.run(W, feed_dict=data))
+    #     print()
+    #
+
     return
+
+
+# tensorboard --logdir="log file path"
+# C:\Users\wnsql\PycharmProjects\ML-image-classify\tensorboard
 
 
 def ex_misc():
@@ -177,7 +376,7 @@ def ex_misc():
     return
 
 
-# not done yet
+# TODO complete code
 def training_MNIST():
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
@@ -286,7 +485,7 @@ def training_simple_neural_tensor_flow_tic():
         # Accuracy report
         hy, o, a = sess.run([h, output, acc],
                             feed_dict={X: data_X, y: data_y})
-    print("\nHypothesis: ", hy, "\nCorrect: ", o, "\nAccuracy: ", a)
+        print("\nHypothesis: ", hy, "\nCorrect: ", o, "\nAccuracy: ", a)
 
     return
 
@@ -454,11 +653,12 @@ if __name__ == '__main__':
     # traning_simple_neural_onebyone()
     # training_simple_neural_tensorflowtic()
     # training_softmax_regression()
-    training_simple_neural_network()
+    # training_simple_neural_network()
 
     # 정리하기
     # https: // www.youtube.com / watch?v = 6CCXyfvubvY
     # https: // www.slideshare.net / dahlmoon / 20160623 - 63318427
 
+   # ex_tensor_board()
 
     pass
