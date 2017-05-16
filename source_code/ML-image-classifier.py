@@ -3,9 +3,9 @@ import numpy
 from PIL import Image
 import tensorflow as tf
 
-file_name_format = "data_batch_%d"
-folder_name = "cifar-10-batches-py"
-batches_meta_file_name = "batches.meta"
+FILE_NAME_FORMAT = "data_batch_%d"
+FOLDER_NAME = "cifar-10-batches-py"
+BATCHES_META_FILE_NAME = "batches.meta"
 
 
 def unpickle(file):
@@ -25,11 +25,11 @@ def showimage(raw_data):
 
 
 if __name__ == '__main__':
-    meta = unpickle(os.path.join(folder_name, batches_meta_file_name))
+    meta = unpickle(os.path.join(FOLDER_NAME, BATCHES_META_FILE_NAME))
     label_names = meta[b'label_names']
 
     batch_number = 1
-    d = unpickle(os.path.join(folder_name, file_name_format % batch_number))
+    d = unpickle(os.path.join(FOLDER_NAME, FILE_NAME_FORMAT % batch_number))
     batch_label = d[b'batch_label']
     data = d[b'data']
     filenames = d[b'filenames']

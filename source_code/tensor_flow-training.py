@@ -167,12 +167,12 @@ def ex_tensor_board():
         [0]
     ]
 
-    # experiment result
-    # all cpu no sum: 101
-    # cal gpu sum cpu with cal: 42
-    # cal gpu no sum: 34
-    # cal gpu sum cpu, assign : i can't
-    # cal gpu sum cpu, direct from gpu tensor : 45
+    # experiment result (second)
+    # model cpu, no summary: 101
+    # model cpu, summary cpu :
+    # model gpu, summary sum: 34
+    # model gpu, summary cpu with cal: 42
+    # model gpu, summary cpu direct from gpu tensor : 45
 
     # NN modeling build
     with tf.device("/gpu:0"):
@@ -221,14 +221,12 @@ def ex_tensor_board():
         # tf.scalar_summary("summary_cost", s_cost)
         # tf.scalar_summary("summary_acc", s_acc)
 
-
-        # assign 방식, 안됨
-        # s_cost = tf.assign(cost, cost)
-        # s_acc = tf.assign(acc, acc)
-
         # direct from gpu 방식
-        tf.scalar_summary("summary_cost", cost)
-        tf.scalar_summary("summary_acc", acc)
+        tf.summary.scalar("summary_cost", cost)
+        tf.summary.scalar("summary_acc", acc)
+        # deprecated
+        # tf.scalar_summary("summary_cost", cost)
+        # tf.scalar_summary("summary_acc", acc)
 
     init_op = tf.initialize_all_variables()
     data = {X: x_data, y: y_data}
@@ -236,15 +234,17 @@ def ex_tensor_board():
         sess.run(init_op)
 
         # build summarywriter and summary merged operation
-        dir = os.path.join(os.path.curdir, "tensorboard")
+        dir = os.path.join("C:\\Users\\yujun\\Documents\\ML-image-classify", "tensorboard_log")
         # print("dir:", os.path.abspath(dir))
-        writer = tf.train.SummaryWriter(dir, sess.graph)
-        merged = tf.merge_all_summaries()
+        # deprecated
+        writer = tf.summary.FileWriter(dir, sess.graph)
+        merged = tf.summary.merge_all()
 
-        for step in range(100001):
+        for step in range(1000):
             sess.run(train_op, feed_dict=data)
 
             if step % 100 == 0:
+                print(step)
                 pass
 
             # run merged opation
@@ -659,6 +659,6 @@ if __name__ == '__main__':
     # https: // www.youtube.com / watch?v = 6CCXyfvubvY
     # https: // www.slideshare.net / dahlmoon / 20160623 - 63318427
 
-   # ex_tensor_board()
+    ex_tensor_board()
 
     pass
